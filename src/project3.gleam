@@ -17,7 +17,7 @@ pub type State {
       Int,
       List(process.Subject(Message)),
       List(process.Subject(Message)),
-      List(process.Subject(Message)),
+      List(#(Int, process.Subject(Message))),
     ),
     stack: List(Int),
   )
@@ -30,7 +30,7 @@ pub type Message {
       Int,
       List(process.Subject(Message)),
       List(process.Subject(Message)),
-      List(process.Subject(Message)),
+      List(#(Int, process.Subject(Message))),
     ),
   )
   // Push(String)
@@ -86,11 +86,11 @@ fn handle_args(args) {
     |> actor.start
 
   let output = chord_id("Hello", m)
-  let output2 = chord_id("3", m)
-  echo output2
+  // let output2 = chord_id("3", m)
+  // echo output2
 
   let random_max = int.bitwise_shift_left(1, m)
-  echo random_max
+  // echo random_max
 
   // echo number_of_nodes
   let unique_random_list = unique_random(number_of_nodes, random_max)
@@ -98,7 +98,7 @@ fn handle_args(args) {
 
   let number_list = list.range(0, number_of_nodes - 1)
 
-  echo number_list
+  // echo number_list
 
   let actor_list =
     list.map(unique_random_list, fn(n) {
@@ -110,40 +110,80 @@ fn handle_args(args) {
       started.data
     })
 
-  // list.each(number_list, fn(n) {
-  //   let random_id = nth_int(unique_random_list, n)
-  //   let random_id = case random_id {
-  //     Ok(random_id) -> random_id
-  //     Error(_) -> 0
-  //   }
+  list.each(number_list, fn(n) {
+    let random_id = nth_int(unique_random_list, n)
+    let random_id = case random_id {
+      Ok(random_id) -> random_id
+      Error(_) -> 0
+    }
 
-  //   let successor_index = { n + 1 } % number_of_nodes
-  //   // echo successor_index
-  //   let successor = nth_actor(actor_list, successor_index)
+    let actor = nth_actor(actor_list, n)
+    let actor = case actor {
+      Ok(actor) -> actor
+      Error(_) -> default_actor.data
+    }
 
-  //   let predecessor_index = { n - 1 } % number_of_nodes
+    let successor_index = { n + 1 } % number_of_nodes
+    // echo successor_index
+    let successor = nth_actor(actor_list, successor_index)
 
-  //   let predecessor_index = case predecessor_index {
-  //     -1 -> {
-  //       number_of_nodes - 1
-  //     }
-  //     _ -> {
-  //       predecessor_index
-  //     }
-  //   }
+    let predecessor_index = { n - 1 } % number_of_nodes
 
-  //   let predecessor = nth_actor(actor_list, predecessor_index)
+    let predecessor_index = case predecessor_index {
+      -1 -> {
+        number_of_nodes - 1
+      }
+      _ -> {
+        predecessor_index
+      }
+    }
 
-  //   let successor = case successor {
-  //     Ok(successor) -> successor
-  //     Error(_) -> default_actor.data
-  //   }
-  //   let predecessor = case predecessor {
-  //     Ok(predecessor) -> predecessor
-  //     Error(_) -> default_actor.data
-  //   }
-  //   // echo random_id
-  // })
+    let predecessor = nth_actor(actor_list, predecessor_index)
+
+    let successor = case successor {
+      Ok(successor) -> successor
+      Error(_) -> default_actor.data
+    }
+
+    let predecessor = case predecessor {
+      Ok(predecessor) -> predecessor
+      Error(_) -> default_actor.data
+    }
+
+    let finger_table = list.range(0, m - 1)
+    let finger_table =
+      list.map(finger_table, fn(k) {
+        let shift = int.bitwise_shift_left(1, k)
+        { random_id + shift } % random_max
+      })
+    // echo finger_table
+
+    let finger_table_numbers =
+      map_to_closest_larger(unique_random_list, finger_table)
+    // echo finger_table_numbers
+    let actor_indicies =
+      map_to_indices(finger_table_numbers, unique_random_list)
+
+    let finger_table_no_id =
+      list.map(actor_indicies, fn(index) {
+        let result = nth_actor(actor_list, index)
+        let result = case result {
+          Ok(result) -> result
+          Error(_) -> default_actor.data
+        }
+        result
+      })
+
+    // echo finger_table_numbers
+    // echo finger_table_no_id
+    let finger_table = zip_lists(finger_table_numbers, finger_table_no_id)
+    // echo finger_table
+    // echo actor_indicies
+    // echo out
+    // echo random_id
+
+    process.send(actor, SetInternal(#(random_id, [], [], finger_table)))
+  })
 
   process.sleep(1000)
   // echo actor_list
@@ -240,6 +280,72 @@ fn loop(acc: List(Int), n: Int, k: Int) -> List(Int) {
     }
   }
 }
-// fn set_successors(actor_list){
 
-// }
+fn min_in_list(xs: List(Int)) -> Int {
+  case xs {
+    [] -> 0
+    [x, ..rest] ->
+      list.fold(rest, x, fn(el, acc) {
+        case el < acc {
+          True -> el
+          False -> acc
+        }
+      })
+  }
+}
+
+/// For each element of `b`, map it to the closest larger value in `a`.
+/// If no element in `a` is larger, wrap to the smallest element in `a`.
+pub fn map_to_closest_larger(a: List(Int), b: List(Int)) -> List(Int) {
+  case a {
+    [] -> []
+    // nothing to map to
+    _ -> {
+      let sorted_a = list.sort(a, int.compare)
+      let smallest = min_in_list(sorted_a)
+
+      list.map(b, fn(b_val) {
+        let greater =
+          list.filter(sorted_a, fn(a_val) {
+            case a_val > b_val {
+              True -> True
+              False -> False
+            }
+          })
+
+        case greater {
+          [] -> smallest
+          [first, ..] -> first
+        }
+      })
+    }
+  }
+}
+
+fn index_of_impl(xs: List(Int), x: Int, i: Int) -> Int {
+  case xs {
+    [] -> -1
+    [h, ..t] ->
+      case h == x {
+        True -> i
+        False -> index_of_impl(t, x, i + 1)
+      }
+  }
+}
+
+fn index_of(xs: List(Int), x: Int) -> Int {
+  index_of_impl(xs, x, 0)
+}
+
+/// Map each element of `a` to the index where it appears in `b`.
+/// Returns -1 for elements not present in `b`.
+pub fn map_to_indices(a: List(Int), b: List(Int)) -> List(Int) {
+  list.map(a, fn(x) { index_of(b, x) })
+}
+
+pub fn zip_lists(
+  a: List(Int),
+  b: List(process.Subject(Message)),
+) -> List(#(Int, process.Subject(Message))) {
+  list.zip(a, b)
+}
