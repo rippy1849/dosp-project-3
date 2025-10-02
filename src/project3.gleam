@@ -272,7 +272,7 @@ fn handle_args(args) {
 
   io.println("Hello from rippy!")
 
-  let m = 8
+  let m = 9
 
   let assert Ok(default_actor) =
     actor.new(State(#(0, [], [], [], 0, m, number_of_nodes, 0), []))
