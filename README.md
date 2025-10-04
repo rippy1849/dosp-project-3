@@ -27,7 +27,7 @@ gleam test  # Run the tests
 
 The provided Gleam code successfully implements a basic simulation of the Chord distributed hash table (DHT) protocol using Gleam's actor model for concurrency. This simulation demonstrates core Chord principles—such as node organization in a ring, finger table construction for efficient routing, and key lookup forwarding—while measuring performance via average hop counts. Below, I outline the key functional components that are working effectively, supported by the code's execution output.
 
-# 1. Node Initialization and Ring Formation
+### 1. Node Initialization and Ring Formation
 
 The code generates a fixed number of nodes (e.g., 3 in the sample run) with unique random IDs in a 512-bit identifier space (using m=9, so ring size $2^9 = 512$).
 Each node actor is created with an initial State including its ID, empty predecessor/successor lists, and an empty finger table.
