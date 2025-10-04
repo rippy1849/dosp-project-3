@@ -24,7 +24,8 @@ Further documentation can be found at <https://hexdocs.pm/project3>.
 ## Development
 
 ```sh
-gleam run   # Run the project
+gleam run numNodes  numRequests   # Run the project
+(eg: gleam run 512 3)
 gleam test  # Run the tests
 ```
 
