@@ -52,4 +52,4 @@ Evidence: Output shows three batch averages eg: (2.222, 2.0, 1.727 hops/lookup) 
 
 Overall, this code works as a proof-of-concept Chord simulator, correctly modeling ring topology, finger-based routing, and basic metrics. It runs concurrently via actors, handles wrap-around, and scales simply with number_of_nodes. For larger N or more requests, it would highlight Chord's logarithmic scaling. Limitations (e.g., no stabilization, no data storage) are noted elsewhere, but the core protocol simulation is functional and produces expected outputs.
 
-#### The largest network we dealt with was 512 nodes, as we chose m=9 for 2^m. Anything number of nodes after that wont work unless the "m" is increased.
+#### The largest network we dealt with was 512 nodes, as we chose m=9 for 2^m. Any number of nodes after that wont work unless the "m" is increased.
